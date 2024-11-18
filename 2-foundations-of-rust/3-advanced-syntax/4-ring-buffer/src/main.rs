@@ -1,7 +1,6 @@
 /// One way to implement a queue is to use a linked list; however, that requires a lot of dynamic memory manipulation to add/remove individual items.
 /// A more low-level approach is to use a circular buffer: the compromise is that the capacity of the queue is then "fixed". For a background on circular buffers,
 /// you can consult https://en.wikipedia.org/wiki/Circular_buffer
-
 // A partial implementation is provided below; please finish it and add some more methods; please remember to run 'cargo fmt' and 'cargo clippy' after
 // every step to get feedback from the rust compiler!
 
@@ -17,6 +16,7 @@
 // 5) EXTRA EXERCISES:
 //  - add a method "has_room" so that "queue.has_room()" is true if and only if writing to the queue will succeed
 //  - add a method "peek" so that "queue.peek()" returns the same thing as "queue.read()", but leaves the element in the queue
+use std::ops::Not;
 
 struct RingBuffer {
     data: Box<[u8]>,
@@ -64,7 +64,10 @@ impl RingBuffer {
     }
 
     fn peek(&self) -> Option<u8> {
-        self.start.eq(&self.end).then(|| self.data[self.start])
+        self.start
+            .eq(&self.end)
+            .not()
+            .then(|| self.data[self.start])
     }
 }
 
