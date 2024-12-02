@@ -1,6 +1,5 @@
 /// While taking a first stab at programs, using panic!() is a quick-and-dirty way to do error handling; but panic!() has the obvious drawback
 /// that it is all-or-nothing: you cannot recover from it (in general).
-
 // Consider this "interactive hello world" (that is a bit fussy about what is a valid name), where the intent is that the program repeats
 // the question if the user entered an invalid name.
 //
@@ -20,35 +19,46 @@
 //
 // NOTE: You will (hopefully) discover that "?" doesn't work in this context, and the resulting code
 // is a bit explicit about the errors --- we can solve that with traits, next week!
-
-use std::io::{BufRead, self, Write};
+use std::io::{self, BufRead, Write};
 
 #[derive(Debug)]
-enum MyError{ InvalidName,IOError( io::Error),
+enum MyError {
+    InvalidName,
+    IOError(io::Error),
 }
 
-fn get_username( )
-->  String
-{
+fn get_username() -> Result<String, MyError> {
     print!("Username: ");
-    io::stdout().flush();
-
-    let mut input=String::new();
-    io::stdin().lock().read_line(&mut input); input=input.trim().to_string();
-
-    for c in input.chars()
-    {
-	if !char::is_alphabetic(c) { panic!("that's not a valid name, try again"); }
+    if let Err(e) = io::stdout().flush() {
+        return Err(MyError::IOError(e));
     }
 
-if input.is_empty() {
-panic!("that's not a valid name, try again");
+    let mut input = String::new();
+    if let Err(e) = io::stdin().lock().read_line(&mut input) {
+        return Err(MyError::IOError(e));
+    }
+    input = input.trim().to_string();
+
+    for c in input.chars() {
+        if !char::is_alphabetic(c) {
+            return Err(MyError::InvalidName);
+        }
+    }
+
+    if input.is_empty() {
+        Err(MyError::InvalidName)
+    } else {
+        Ok(input)
+    }
 }
 
-    input
-}
-
-fn main() {
-    let name=get_username();
-    println!("Hello {name}!")
+fn main() -> Result<(), MyError> {
+    let mut name = get_username();
+    while let Err(MyError::InvalidName) = name {
+        println!("Invalid name, try again!");
+        name = get_username();
+    }
+    let name = name?;
+    println!("Hello {name}!");
+    Ok(())
 }
